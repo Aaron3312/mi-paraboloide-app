@@ -2,19 +2,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-// Componentes UI simplificados y reactivos
+// Componentes UI premium con animaciones
 const Button = ({ 
   onClick, 
   variant = "default", 
   size = "default", 
   className = "", 
-  children 
+  children,
+  icon
 }) => {
-  const baseClasses = "px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2";
+  const baseClasses = "px-6 py-3 rounded-xl font-semibold transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl relative overflow-hidden group";
+  
   const variants = {
-    default: "bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-500",
-    destructive: "bg-red-500 hover:bg-red-600 text-white focus:ring-red-500",
-    outline: "border-2 border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 focus:ring-gray-500"
+    default: "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white focus:ring-blue-400 shadow-blue-500/25",
+    destructive: "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white focus:ring-red-400 shadow-red-500/25",
+    outline: "border-2 border-gray-300 bg-white/80 backdrop-blur-sm hover:border-gray-400 hover:bg-white/90 text-gray-700 focus:ring-gray-400 shadow-gray-500/10",
+    glass: "bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 focus:ring-white/50 shadow-white/10"
   };
   
   return (
@@ -22,136 +25,260 @@ const Button = ({
       onClick={onClick}
       className={`${baseClasses} ${variants[variant]} ${className}`}
     >
-      {children}
+      <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
+      <span className="relative flex items-center gap-2">
+        {icon && <span className="text-lg">{icon}</span>}
+        {children}
+      </span>
     </button>
   );
 };
 
-const Card = ({ className = "", children }) => (
-  <div className={`bg-white rounded-lg shadow-md ${className}`}>
-    {children}
-  </div>
-);
+const Card = ({ className = "", children, variant = "default" }) => {
+  const variants = {
+    default: "bg-white/90 backdrop-blur-sm shadow-xl border border-white/20",
+    glass: "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
+    gradient: "bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm shadow-2xl border border-white/30"
+  };
+  
+  return (
+    <div className={`rounded-2xl transition-all duration-300 hover:shadow-2xl ${variants[variant]} ${className}`}>
+      {children}
+    </div>
+  );
+};
 
 const CardHeader = ({ className = "", children }) => (
-  <div className={`px-6 py-4 border-b ${className}`}>
+  <div className={`px-8 py-6 border-b border-white/10 ${className}`}>
     {children}
   </div>
 );
 
 const CardTitle = ({ className = "", children }) => (
-  <h3 className={`text-xl font-semibold ${className}`}>
+  <h3 className={`text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent ${className}`}>
     {children}
   </h3>
 );
 
 const CardContent = ({ className = "", children }) => (
-  <div className={`px-6 py-4 ${className}`}>
+  <div className={`px-8 py-6 ${className}`}>
     {children}
   </div>
 );
 
 const CardDescription = ({ className = "", children }) => (
-  <p className={`text-sm text-gray-600 ${className}`}>
+  <p className={`text-gray-600 leading-relaxed ${className}`}>
     {children}
   </p>
 );
 
-const Badge = ({ variant = "default", className = "", children }) => {
+const Badge = ({ variant = "default", className = "", children, animated = false }) => {
   const variants = {
-    default: "bg-blue-100 text-blue-800",
-    outline: "border border-gray-300 bg-white text-gray-700"
+    default: "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg",
+    outline: "border-2 border-gray-300 bg-white/80 backdrop-blur-sm text-gray-700",
+    glass: "bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-white/10",
+    success: "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25"
   };
   
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${variants[variant]} ${className}`}>
+    <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${variants[variant]} ${animated ? 'animate-pulse' : ''} ${className}`}>
       {children}
     </span>
   );
 };
 
-// Componente para el panel de información
+// Componente de partículas flotantes
+const FloatingParticles = () => {
+  const canvasRef = useRef(null);
+  
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const particles = [];
+    
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    
+    resizeCanvas();
+    
+    // Crear partículas
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 3 + 1,
+        opacity: Math.random() * 0.5 + 0.2
+      });
+    }
+    
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(particle => {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        
+        if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
+        if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+        
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${particle.opacity})`;
+        ctx.fill();
+      });
+      
+      requestAnimationFrame(animate);
+    };
+    
+    animate();
+    
+    window.addEventListener('resize', resizeCanvas);
+    
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, []);
+  
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="fixed inset-0 pointer-events-none z-0"
+      style={{ mixBlendMode: 'soft-light' }}
+    />
+  );
+};
+
+// Panel de información premium
 const InfoPanel = () => (
-  <Card className="mb-6 border-l-4 border-blue-500">
+  <Card variant="gradient" className="mb-8 border-l-4 border-gradient-to-b from-blue-500 to-purple-600 relative overflow-hidden">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-full blur-3xl"></div>
     <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <span>📐</span>
-        Especificaciones del Proyecto
+      <CardTitle className="flex items-center gap-3 text-3xl">
+        <span className="text-4xl animate-bounce">🏗️</span>
+        <span className="bg-gradient-to-r from-blue-600 to-purple-700 bg-clip-text text-transparent">
+          Especificaciones del Proyecto
+        </span>
       </CardTitle>
     </CardHeader>
-    <CardContent className="space-y-3">
-      <div className="flex flex-col gap-2">
-        <Badge variant="outline" className="text-sm">
-          <strong>Ecuación:</strong> z = 8 - (x²/64) - (y²/625)
+    <CardContent className="space-y-4 ">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Badge variant="glass" className="text-center py-3 hover:scale-105 transition-transform">
+          <div className="flex flex-col">
+            <span className="text-xs opacity-80 text-black">ECUACIÓN</span>
+            <span className="font-bold text-black">z = 8 - (x²/64) - (y²/625)</span>
+          </div>
         </Badge>
-        <Badge variant="outline" className="text-sm">
-          <strong>Dimensiones:</strong> 16m × 50m × 8m (ancho × largo × altura máxima)
+        <Badge variant="glass" className="text-center py-3 hover:scale-105 transition-transform">
+          <div className="flex flex-col">
+            <span className="text-xs opacity-80 text-black">DIMENSIONES</span>
+            <span className="font-bold text-black">16m × 50m × 8m</span>
+          </div>
         </Badge>
-        <Badge variant="outline" className="text-sm">
-          <strong>Tipo:</strong> Paraboloide Hiperbólico (silla de montar)
+        <Badge variant="glass" className="text-center py-3 hover:scale-105 transition-transform">
+          <div className="flex flex-col">
+            <span className="text-xs opacity-80 text-black">TIPO</span>
+            <span className="font-bold text-black">Paraboloide Hiperbólico</span>
+          </div>
         </Badge>
       </div>
     </CardContent>
   </Card>
 );
 
-// Componente para los controles
+// Controles premium
 const Controls = ({ 
   autoRotate, 
   onToggleRotate, 
-  onReset 
+  onReset,
+  showSupports,
+  onToggleSupports,
+  wireframe,
+  onToggleWireframe 
 }) => (
-  <div className="flex justify-center gap-4 mb-6 flex-wrap">
+  <div className="flex justify-center gap-4 mb-8 flex-wrap">
     <Button 
       onClick={onToggleRotate}
       variant={autoRotate ? "destructive" : "default"}
-      size="default"
-      className="transform hover:scale-105"
+      icon={autoRotate ? '⏸️' : '▶️'}
+      className="min-w-[120px]"
     >
-      {autoRotate ? '⏸️ Pausar' : '▶️ Rotar'}
+      {autoRotate ? 'Pausar' : 'Rotar'}
+    </Button>
+    <Button 
+      onClick={onToggleSupports}
+      variant={showSupports ? "default" : "outline"}
+      icon="🏗️"
+      className="min-w-[120px]"
+    >
+      {showSupports ? 'Ocultar' : 'Mostrar'} Soportes
+    </Button>
+    <Button 
+      onClick={onToggleWireframe}
+      variant={wireframe ? "default" : "outline"}
+      icon="🔗"
+      className="min-w-[120px]"
+    >
+      {wireframe ? 'Sólido' : 'Wireframe'}
     </Button>
     <Button 
       onClick={onReset}
-      variant="outline"
-      size="default"
-      className="transform hover:scale-105"
+      variant="glass"
+      icon="🔄"
+      className="min-w-[120px]"
     >
-      🔄 Reset
+      Reset
     </Button>
   </div>
 );
 
-// Componente para los cálculos
+// Panel de cálculos premium
 const CalculationsPanel = ({ calculations }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-6">
-    <Card className="border-2 border-green-500 bg-green-50">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-green-800 text-lg flex items-center gap-2">
-          <span>📏</span>
-          Área Superficial
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-bold text-gray-800">{calculations.surfaceArea.toFixed(1)} m²</p>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+    <Card variant="glass" className="group hover:scale-105 transition-all duration-300">
+      <CardContent className="text-center p-6">
+        <div className="text-4xl mb-3 group-hover:animate-bounce">📏</div>
+        <h3 className="text-lg font-bold text-white mb-2">Área Superficial</h3>
+        <p className="text-3xl font-bold text-white">{calculations.surfaceArea.toFixed(1)}</p>
+        <p className="text-sm text-white/80 mt-1">m²</p>
       </CardContent>
     </Card>
     
-    <Card className="border-2 border-green-500 bg-green-50">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-green-800 text-lg flex items-center gap-2">
-          <span>🧱</span>
-          Volumen de Concreto
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-bold text-gray-800">{calculations.concreteVolume.toFixed(1)} m³</p>
-        <CardDescription className="mt-1">Espesor asumido: 0.15m</CardDescription>
+    <Card variant="glass" className="group hover:scale-105 transition-all duration-300">
+      <CardContent className="text-center p-6">
+        <div className="text-4xl mb-3 group-hover:animate-bounce">🧱</div>
+        <h3 className="text-lg font-bold text-white mb-2">Volumen Concreto</h3>
+        <p className="text-3xl font-bold text-white">{calculations.concreteVolume.toFixed(1)}</p>
+        <p className="text-sm text-white/80 mt-1">m³</p>
+      </CardContent>
+    </Card>
+    
+    <Card variant="glass" className="group hover:scale-105 transition-all duration-300">
+      <CardContent className="text-center p-6">
+        <div className="text-4xl mb-3 group-hover:animate-bounce">💨</div>
+        <h3 className="text-lg font-bold text-white mb-2">Volumen Aire</h3>
+        <p className="text-3xl font-bold text-white">{calculations.airVolume.toFixed(1)}</p>
+        <p className="text-sm text-white/80 mt-1">m³</p>
+      </CardContent>
+    </Card>
+    
+    <Card variant="glass" className="group hover:scale-105 transition-all duration-300">
+      <CardContent className="text-center p-6">
+        <div className="text-4xl mb-3 group-hover:animate-bounce">🏗️</div>
+        <h3 className="text-lg font-bold text-white mb-2">Soportes</h3>
+        <p className="text-3xl font-bold text-white">{calculations.supportCount}</p>
+        <p className="text-sm text-white/80 mt-1">unidades</p>
       </CardContent>
     </Card>
   </div>
 );
 
-// Hook personalizado para Three.js
+// Hook mejorado para Three.js
 const useThreeJS = (canvasRef) => {
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -162,38 +289,54 @@ const useThreeJS = (canvasRef) => {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Obtener el tamaño del contenedor
     const container = canvasRef.current.parentElement;
     const isDesktop = window.innerWidth >= 768;
-    const containerWidth = isDesktop ? window.innerWidth * 0.95 : container.offsetWidth;
-    const containerHeight = isDesktop ? window.innerHeight * 0.6 : Math.min(600, containerWidth * 0.75);
+    const containerWidth = isDesktop ? window.innerWidth * 0.9 : container.offsetWidth;
+    const containerHeight = isDesktop ? window.innerHeight * 0.7 : Math.min(600, containerWidth * 0.75);
 
-    // Configuración inicial
+    // Configuración de escena mejorada
     const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x87CEEB, 10, 200);
+    
     const camera = new THREE.PerspectiveCamera(75, containerWidth/containerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ 
       canvas: canvasRef.current,
-      antialias: true 
+      antialias: true,
+      alpha: true
     });
     
     renderer.setSize(containerWidth, containerHeight);
-    renderer.setClearColor(0x87CEEB);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x87CEEB, 0);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
 
-    // Iluminación
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    // Iluminación mejorada
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(50, 50, 50);
     directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 2048;
-    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.mapSize.width = 4096;
+    directionalLight.shadow.mapSize.height = 4096;
+    directionalLight.shadow.camera.near = 0.1;
+    directionalLight.shadow.camera.far = 500;
+    directionalLight.shadow.camera.left = -100;
+    directionalLight.shadow.camera.right = 100;
+    directionalLight.shadow.camera.top = 100;
+    directionalLight.shadow.camera.bottom = -100;
     scene.add(directionalLight);
 
-    // Crear el paraboloide hiperbólico manualmente
-    const createParaboloidGeometry = (widthSegments = 50, heightSegments = 100) => {
+    // Luz adicional para mejor iluminación
+    const pointLight = new THREE.PointLight(0xffffff, 0.6, 100);
+    pointLight.position.set(0, 30, 0);
+    scene.add(pointLight);
+
+    // Crear geometría del paraboloide mejorada
+    const createParaboloidGeometry = (widthSegments = 60, heightSegments = 120) => {
       const geometry = new THREE.BufferGeometry();
       const vertices = [];
       const indices = [];
@@ -233,14 +376,17 @@ const useThreeJS = (canvasRef) => {
       return geometry;
     };
 
-    const geometry = createParaboloidGeometry(50, 100);
+    const geometry = createParaboloidGeometry(60, 120);
 
-    const material = new THREE.MeshLambertMaterial({ 
+    // Material mejorado con gradiente
+    const material = new THREE.MeshPhongMaterial({ 
       color: 0x8B4513,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.8,
-      wireframe: true
+      opacity: 0.85,
+      wireframe: true,
+      shininess: 100,
+      specular: 0x222222
     });
 
     const roofMesh = new THREE.Mesh(geometry, material);
@@ -248,17 +394,21 @@ const useThreeJS = (canvasRef) => {
     roofMesh.castShadow = true;
     scene.add(roofMesh);
 
-    // Crear soportes
+    // Crear soportes mejorados
     const supportGroup = new THREE.Group();
     for (let x = -8; x <= 8; x += 4) {
       for (let y = -24; y <= 24; y += 4) {
         const height = Math.max(0, 8 - (x*x/64) - (y*y/625));
         if (height > 0.5) {
-          const supportGeometry = new THREE.CylinderGeometry(0.2, 0.2, height, 8);
-          const supportMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+          const supportGeometry = new THREE.CylinderGeometry(0.25, 0.3, height, 12);
+          const supportMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x654321,
+            shininess: 50
+          });
           const support = new THREE.Mesh(supportGeometry, supportMaterial);
           support.position.set(x, height/2, y);
           support.castShadow = true;
+          support.receiveShadow = true;
           supportGroup.add(support);
         }
       }
@@ -266,47 +416,54 @@ const useThreeJS = (canvasRef) => {
     scene.add(supportGroup);
     supportGroup.visible = false;
 
-    // Crear el suelo
-    const groundGeometry = new THREE.PlaneGeometry(60, 80);
-    const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90EE90 });
+    // Suelo mejorado
+    const groundGeometry = new THREE.PlaneGeometry(80, 100);
+    const groundMaterial = new THREE.MeshLambertMaterial({ 
+      color: 0x90EE90,
+      transparent: true,
+      opacity: 0.8
+    });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.1;
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Posición inicial de la cámara
-    camera.position.set(30, 20, 30);
+    // Skybox simple
+    const skyGeometry = new THREE.SphereGeometry(300, 32, 32);
+    const skyMaterial = new THREE.MeshBasicMaterial({
+      color: 0x87CEEB,
+      side: THREE.BackSide
+    });
+    const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+    scene.add(sky);
+
+    camera.position.set(35, 25, 35);
     camera.lookAt(0, 4, 0);
 
-    // Función para manejar el resize
     const handleResize = () => {
       const container = canvasRef.current?.parentElement;
       if (!container) return;
       
       const isDesktop = window.innerWidth >= 768;
-      const containerWidth = isDesktop ? window.innerWidth * 0.95 : container.offsetWidth;
-      const containerHeight = isDesktop ? window.innerHeight * 0.6 : Math.min(600, containerWidth * 0.75);
+      const containerWidth = isDesktop ? window.innerWidth * 0.9 : container.offsetWidth;
+      const containerHeight = isDesktop ? window.innerHeight * 0.7 : Math.min(600, containerWidth * 0.75);
       
       camera.aspect = containerWidth / containerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(containerWidth, containerHeight);
     };
 
-    // Agregar listener para resize
     window.addEventListener('resize', handleResize);
 
-    // Guardar referencias
     sceneRef.current = scene;
     rendererRef.current = renderer;
     cameraRef.current = camera;
     roofMeshRef.current = roofMesh;
     supportGroupRef.current = supportGroup;
 
-    // Render inicial
     renderer.render(scene, camera);
 
-    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
@@ -326,6 +483,8 @@ const useThreeJS = (canvasRef) => {
 const HyperbolicParaboloidViewer = () => {
   const canvasRef = useRef(null);
   const [autoRotate, setAutoRotate] = useState(false);
+  const [showSupports, setShowSupports] = useState(false);
+  const [wireframe, setWireframe] = useState(true);
   const animationRef = useRef(null);
   const [calculations, setCalculations] = useState({
     surfaceArea: 0,
@@ -336,15 +495,15 @@ const HyperbolicParaboloidViewer = () => {
 
   const { scene, renderer, camera, roofMesh, supportGroup } = useThreeJS(canvasRef);
 
-  // Controles de mouse y touch mejorados
+  // Controles mejorados
   useEffect(() => {
     if (!canvasRef.current || !camera || !renderer || !scene) return;
 
     let isInteracting = false;
     let lastX = 0;
     let lastY = 0;
+    let rotationSpeed = 0.01;
 
-    // Función para obtener coordenadas del evento (mouse o touch)
     const getEventCoordinates = (event) => {
       if (event.touches && event.touches.length > 0) {
         return {
@@ -358,18 +517,16 @@ const HyperbolicParaboloidViewer = () => {
       };
     };
 
-    // Función para renderizar
     const renderScene = () => {
       renderer.render(scene, camera);
     };
 
-    // Handlers para mouse/touch
     const handleInteractionStart = (event) => {
       isInteracting = true;
       const coords = getEventCoordinates(event);
       lastX = coords.x;
       lastY = coords.y;
-      setAutoRotate(false); // Pausar rotación automática
+      setAutoRotate(false);
       event.preventDefault();
     };
 
@@ -384,22 +541,18 @@ const HyperbolicParaboloidViewer = () => {
       const deltaX = coords.x - lastX;
       const deltaY = coords.y - lastY;
       
-      // Convertir posición de cámara a coordenadas esféricas
       const spherical = new THREE.Spherical();
       spherical.setFromVector3(camera.position);
       
-      // Aplicar rotación
-      spherical.theta -= deltaX * 0.01;
-      spherical.phi += deltaY * 0.01;
+      spherical.theta -= deltaX * rotationSpeed;
+      spherical.phi += deltaY * rotationSpeed;
       
-      // Limitar phi para evitar que la cámara se voltee
       spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+      spherical.radius = Math.max(20, Math.min(80, spherical.radius));
       
-      // Actualizar posición de la cámara
       camera.position.setFromSpherical(spherical);
       camera.lookAt(0, 4, 0);
       
-      // Renderizar inmediatamente
       renderScene();
       
       lastX = coords.x;
@@ -407,17 +560,28 @@ const HyperbolicParaboloidViewer = () => {
       event.preventDefault();
     };
 
-    // Event listeners
+    const handleWheel = (event) => {
+      event.preventDefault();
+      const spherical = new THREE.Spherical();
+      spherical.setFromVector3(camera.position);
+      
+      spherical.radius += event.deltaY * 0.05;
+      spherical.radius = Math.max(20, Math.min(80, spherical.radius));
+      
+      camera.position.setFromSpherical(spherical);
+      camera.lookAt(0, 4, 0);
+      renderScene();
+    };
+
     canvasRef.current.addEventListener('mousedown', handleInteractionStart);
     canvasRef.current.addEventListener('touchstart', handleInteractionStart, { passive: false });
+    canvasRef.current.addEventListener('wheel', handleWheel, { passive: false });
     
     document.addEventListener('mouseup', handleInteractionEnd);
     document.addEventListener('touchend', handleInteractionEnd);
-    
     document.addEventListener('mousemove', handleInteractionMove);
     document.addEventListener('touchmove', handleInteractionMove, { passive: false });
 
-    // Prevenir scroll en canvas
     const preventScroll = (e) => e.preventDefault();
     canvasRef.current.addEventListener('touchstart', preventScroll);
     canvasRef.current.addEventListener('touchmove', preventScroll);
@@ -426,6 +590,7 @@ const HyperbolicParaboloidViewer = () => {
       if (canvasRef.current) {
         canvasRef.current.removeEventListener('mousedown', handleInteractionStart);
         canvasRef.current.removeEventListener('touchstart', handleInteractionStart);
+        canvasRef.current.removeEventListener('wheel', handleWheel);
         canvasRef.current.removeEventListener('touchstart', preventScroll);
         canvasRef.current.removeEventListener('touchmove', preventScroll);
       }
@@ -436,12 +601,31 @@ const HyperbolicParaboloidViewer = () => {
     };
   }, [camera, renderer, scene]);
 
-  // Cálculos
+  // Efectos para controles
+  useEffect(() => {
+    if (supportGroup) {
+      supportGroup.visible = showSupports;
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+  }, [showSupports, supportGroup, renderer, scene, camera]);
+
+  useEffect(() => {
+    if (roofMesh) {
+      roofMesh.material.wireframe = wireframe;
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+  }, [wireframe, roofMesh, renderer, scene, camera]);
+
+  // Cálculos mejorados
   useEffect(() => {
     const calculateSurfaceArea = () => {
       let area = 0;
-      const dx = 0.5;
-      const dy = 0.5;
+      const dx = 0.25;
+      const dy = 0.25;
       
       for (let x = -8; x <= 8; x += dx) {
         for (let y = -25; y <= 25; y += dy) {
@@ -459,8 +643,8 @@ const HyperbolicParaboloidViewer = () => {
 
     const calculateAirVolume = () => {
       let volume = 0;
-      const dx = 0.5;
-      const dy = 0.5;
+      const dx = 0.25;
+      const dy = 0.25;
       
       for (let x = -8; x <= 8; x += dx) {
         for (let y = -25; y <= 25; y += dy) {
@@ -497,16 +681,17 @@ const HyperbolicParaboloidViewer = () => {
     });
   }, []);
 
-  // Animación de rotación automática
+  // Animación mejorada
   useEffect(() => {
     if (!scene || !renderer || !camera) return;
 
     const animate = () => {
       if (autoRotate) {
-        const time = Date.now() * 0.0005;
-        const radius = 40;
+        const time = Date.now() * 0.0003;
+        const radius = 45;
         camera.position.x = Math.cos(time) * radius;
         camera.position.z = Math.sin(time) * radius;
+        camera.position.y = 25 + Math.sin(time * 0.5) * 5;
         camera.lookAt(0, 4, 0);
         
         renderer.render(scene, camera);
@@ -525,13 +710,13 @@ const HyperbolicParaboloidViewer = () => {
     };
   }, [scene, renderer, camera, autoRotate]);
 
-  const handleToggleRotate = () => {
-    setAutoRotate(!autoRotate);
-  };
+  const handleToggleRotate = () => setAutoRotate(!autoRotate);
+  const handleToggleSupports = () => setShowSupports(!showSupports);
+  const handleToggleWireframe = () => setWireframe(!wireframe);
 
   const handleReset = () => {
     if (camera && renderer && scene) {
-      camera.position.set(30, 20, 30);
+      camera.position.set(35, 25, 35);
       camera.lookAt(0, 4, 0);
       setAutoRotate(false);
       renderer.render(scene, camera);
@@ -539,42 +724,94 @@ const HyperbolicParaboloidViewer = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-500 to-purple-600 p-2 md:p-4">
-      <div className="max-w-none md:max-w-7xl mx-auto">
-        <Card className="shadow-2xl overflow-hidden">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 flex items-center justify-center gap-2">
-              <span>⛪</span>
-              Diseño del Techo de Paraboloide Hiperbólico
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 md:space-y-6 p-2 md:p-6">
-            <InfoPanel />
-            
-            <Controls 
-              autoRotate={autoRotate}
-              onToggleRotate={handleToggleRotate}
-              onReset={handleReset}
-            />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-600 relative overflow-hidden">
+      <FloatingParticles />
+      
+      {/* Efectos de fondo */}
+      <div className="absolute inset-0 bg-black/20"></div>
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      
+      <div className="relative z-10 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Premium */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-4 animate-pulse">
+              🏗️ DISEÑO ARQUITECTÓNICO
+            </h1>
+            <p className="text-xl md:text-2xl text-white/80 font-light tracking-wide">
+              Paraboloide Hiperbólico de Vanguardia
+            </p>
+            <div className="w-32 h-1 bg-gradient-to-r from-blue-400 to-purple-400 mx-auto mt-6 rounded-full"></div>
+          </div>
 
-            <div className="text-center">
-              <Card className="inline-block border-2 border-gray-300 shadow-lg w-full max-w-none">
-                <CardContent className="p-0">
-                  <canvas 
-                    ref={canvasRef} 
-                    className="rounded-lg w-full h-auto block mx-auto"
-                    style={{ touchAction: 'none', maxWidth: '100%' }}
-                  />
-                </CardContent>
-              </Card>
-              <CardDescription className="mt-4 text-sm text-gray-600 font-medium">
-                Arrastra con el mouse o toca y arrastra para rotar la vista. Los controles funcionan correctamente.
+          <InfoPanel />
+          
+          <Controls 
+            autoRotate={autoRotate}
+            onToggleRotate={handleToggleRotate}
+            onReset={handleReset}
+            showSupports={showSupports}
+            onToggleSupports={handleToggleSupports}
+            wireframe={wireframe}
+            onToggleWireframe={handleToggleWireframe}
+          />
+
+          {/* Visor 3D Premium */}
+          <div className="text-center mb-8">
+            <Card variant="glass" className="inline-block border-2 border-white/20 shadow-2xl w-full max-w-none relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+              <CardContent className="p-0 relative">
+                <canvas 
+                  ref={canvasRef} 
+                  className="rounded-2xl w-full h-auto block mx-auto"
+                  style={{ 
+                    touchAction: 'none', 
+                    maxWidth: '100%',
+                    background: 'radial-gradient(circle at center, rgba(135,206,235,0.3) 0%, rgba(135,206,235,0.1) 100%)'
+                  }}
+                />
+                
+                {/* Overlay de controles */}
+                <div className="absolute top-4 left-4 space-y-2">
+                  <Badge variant="glass" className="text-xs">
+                    🖱️ Arrastra para rotar
+                  </Badge>
+                  <Badge variant="glass" className="text-xs">
+                    🔍 Scroll para zoom
+                  </Badge>
+                </div>
+                
+                {/* Indicador de estado */}
+                <div className="absolute top-4 right-4">
+                  {autoRotate && (
+                    <Badge variant="success" animated className="text-xs">
+                      🔄 Rotación automática
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="mt-6 max-w-2xl mx-auto">
+              <CardDescription className="text-white/70 text-lg leading-relaxed">
+                Explora el modelo 3D interactivo del techo paraboloide hiperbólico. 
+                Utiliza los controles para visualizar diferentes aspectos del diseño estructural.
               </CardDescription>
             </div>
+          </div>
 
-            <CalculationsPanel calculations={calculations} />
-          </CardContent>
-        </Card>
+          <CalculationsPanel calculations={calculations} />
+          
+          {/* Footer Premium */}
+          <div className="mt-16 text-center">
+            <Card variant="glass" className="inline-block px-8 py-4">
+              <p className="text-white/60 text-sm">
+                Visualización arquitectónica avanzada • Renderizado en tiempo real • Cálculos precisos
+              </p>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
