@@ -2,84 +2,152 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
+// Componentes UI simplificados y reactivos
+const Button = ({ 
+  onClick, 
+  variant = "default", 
+  size = "default", 
+  className = "", 
+  children 
+}) => {
+  const baseClasses = "px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2";
+  const variants = {
+    default: "bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-500",
+    destructive: "bg-red-500 hover:bg-red-600 text-white focus:ring-red-500",
+    outline: "border-2 border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 focus:ring-gray-500"
+  };
+  
+  return (
+    <button 
+      onClick={onClick}
+      className={`${baseClasses} ${variants[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
+
+const Card = ({ className = "", children }) => (
+  <div className={`bg-white rounded-lg shadow-md ${className}`}>
+    {children}
+  </div>
+);
+
+const CardHeader = ({ className = "", children }) => (
+  <div className={`px-6 py-4 border-b ${className}`}>
+    {children}
+  </div>
+);
+
+const CardTitle = ({ className = "", children }) => (
+  <h3 className={`text-xl font-semibold ${className}`}>
+    {children}
+  </h3>
+);
+
+const CardContent = ({ className = "", children }) => (
+  <div className={`px-6 py-4 ${className}`}>
+    {children}
+  </div>
+);
+
+const CardDescription = ({ className = "", children }) => (
+  <p className={`text-sm text-gray-600 ${className}`}>
+    {children}
+  </p>
+);
+
+const Badge = ({ variant = "default", className = "", children }) => {
+  const variants = {
+    default: "bg-blue-100 text-blue-800",
+    outline: "border border-gray-300 bg-white text-gray-700"
+  };
+  
+  return (
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${variants[variant]} ${className}`}>
+      {children}
+    </span>
+  );
+};
+
 // Componente para el panel de información
 const InfoPanel = () => (
-  <div className="bg-gray-100 rounded-lg p-4 mb-5 border-l-4 border-blue-500">
-    <h3 className="text-lg font-semibold mb-2 text-gray-800">📐 Especificaciones del Proyecto</h3>
-    <p className="mb-1 text-gray-700"><strong>Ecuación:</strong> z = 8 - (x²/64) - (y²/625)</p>
-    <p className="mb-1 text-gray-700"><strong>Dimensiones:</strong> 16m × 50m × 8m (ancho × largo × altura máxima)</p>
-    <p className="text-gray-700"><strong>Tipo:</strong> Paraboloide Hiperbólico (silla de montar)</p>
-  </div>
+  <Card className="mb-6 border-l-4 border-blue-500">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <span>📐</span>
+        Especificaciones del Proyecto
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-3">
+      <div className="flex flex-col gap-2">
+        <Badge variant="outline" className="text-sm">
+          <strong>Ecuación:</strong> z = 8 - (x²/64) - (y²/625)
+        </Badge>
+        <Badge variant="outline" className="text-sm">
+          <strong>Dimensiones:</strong> 16m × 50m × 8m (ancho × largo × altura máxima)
+        </Badge>
+        <Badge variant="outline" className="text-sm">
+          <strong>Tipo:</strong> Paraboloide Hiperbólico (silla de montar)
+        </Badge>
+      </div>
+    </CardContent>
+  </Card>
 );
 
 // Componente para los controles
 const Controls = ({ 
   autoRotate, 
-  showWireframe, 
-  showSupports, 
   onToggleRotate, 
-  onToggleWireframe, 
-  onToggleSupports, 
   onReset 
 }) => (
-  <div className="flex justify-center gap-2 sm:gap-5 mb-5 flex-wrap">
-    <div className="flex flex-col items-center gap-1">
-      <button 
-        onClick={onToggleRotate}
-        className={`px-3 sm:px-5 py-2 rounded border-none text-white cursor-pointer text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-0.5 ${
-          autoRotate ? 'bg-blue-500 hover:bg-blue-600' : 'bg-green-500 hover:bg-green-600'
-        }`}
-      >
-        🔄 Rotar
-      </button>
-      <button 
-        onClick={onToggleWireframe}
-        className={`px-3 sm:px-5 py-2 rounded border-none text-white cursor-pointer text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-0.5 ${
-          showWireframe ? 'bg-blue-500 hover:bg-blue-600' : 'bg-green-500 hover:bg-green-600'
-        }`}
-      >
-        📐 Wireframe
-      </button>
-    </div>
-    <div className="flex flex-col items-center gap-1">
-      <button 
-        onClick={onToggleSupports}
-        className={`px-3 sm:px-5 py-2 rounded border-none text-white cursor-pointer text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-0.5 ${
-          showSupports ? 'bg-blue-500 hover:bg-blue-600' : 'bg-green-500 hover:bg-green-600'
-        }`}
-      >
-        🏗️ Soportes
-      </button>
-      <button 
-        onClick={onReset}
-        className="px-3 sm:px-5 py-2 rounded border-none bg-green-500 hover:bg-green-600 text-white cursor-pointer text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-0.5"
-      >
-        🔄 Reset
-      </button>
-    </div>
+  <div className="flex justify-center gap-4 mb-6 flex-wrap">
+    <Button 
+      onClick={onToggleRotate}
+      variant={autoRotate ? "destructive" : "default"}
+      size="default"
+      className="transform hover:scale-105"
+    >
+      {autoRotate ? '⏸️ Pausar' : '▶️ Rotar'}
+    </Button>
+    <Button 
+      onClick={onReset}
+      variant="outline"
+      size="default"
+      className="transform hover:scale-105"
+    >
+      🔄 Reset
+    </Button>
   </div>
 );
 
 // Componente para los cálculos
 const CalculationsPanel = ({ calculations }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
-    <div className="bg-green-50 p-4 rounded-lg border border-green-500">
-      <h3 className="mt-0 text-green-800 font-semibold">📏 Área Superficial</h3>
-      <p className="text-gray-800 font-medium">{calculations.surfaceArea.toFixed(1)} m²</p>
-    </div>
-    <div className="bg-green-50 p-4 rounded-lg border border-green-500">
-      <h3 className="mt-0 text-green-800 font-semibold">🧱 Volumen de Concreto</h3>
-      <p className="text-gray-800 font-medium">{calculations.concreteVolume.toFixed(1)} m³</p>
-      <small className="text-gray-700">Espesor asumido: 0.15m</small>
-    </div>
-    <div className="bg-green-50 p-4 rounded-lg border border-green-500">
-      <h3 className="mt-0 text-green-800 font-semibold">🌬️ Volumen de Aire</h3>
-      <p className="text-gray-800 font-medium">{calculations.airVolume.toFixed(1)} m³</p>
-    </div>
-    <div className="bg-green-50 p-4 rounded-lg border border-green-500">
-      <h3 className="mt-0 text-green-800 font-semibold">🏗️ Soportes Necesarios</h3>
-      <p className="text-gray-800 font-medium">{calculations.supportCount} soportes necesarios</p>
-    </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-6">
+    <Card className="border-2 border-green-500 bg-green-50">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-green-800 text-lg flex items-center gap-2">
+          <span>📏</span>
+          Área Superficial
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-2xl font-bold text-gray-800">{calculations.surfaceArea.toFixed(1)} m²</p>
+      </CardContent>
+    </Card>
+    
+    <Card className="border-2 border-green-500 bg-green-50">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-green-800 text-lg flex items-center gap-2">
+          <span>🧱</span>
+          Volumen de Concreto
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-2xl font-bold text-gray-800">{calculations.concreteVolume.toFixed(1)} m³</p>
+        <CardDescription className="mt-1">Espesor asumido: 0.15m</CardDescription>
+      </CardContent>
+    </Card>
   </div>
 );
 
@@ -90,15 +158,15 @@ const useThreeJS = (canvasRef) => {
   const cameraRef = useRef(null);
   const roofMeshRef = useRef(null);
   const supportGroupRef = useRef(null);
-  const animationRef = useRef(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
     // Obtener el tamaño del contenedor
     const container = canvasRef.current.parentElement;
-    const containerWidth = container.offsetWidth;
-    const containerHeight = Math.min(600, containerWidth * 0.75); // Aspect ratio 4:3 máximo 600px
+    const isDesktop = window.innerWidth >= 768;
+    const containerWidth = isDesktop ? window.innerWidth * 0.95 : container.offsetWidth;
+    const containerHeight = isDesktop ? window.innerHeight * 0.6 : Math.min(600, containerWidth * 0.75);
 
     // Configuración inicial
     const scene = new THREE.Scene();
@@ -171,7 +239,8 @@ const useThreeJS = (canvasRef) => {
       color: 0x8B4513,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.8,
+      wireframe: true
     });
 
     const roofMesh = new THREE.Mesh(geometry, material);
@@ -212,9 +281,12 @@ const useThreeJS = (canvasRef) => {
 
     // Función para manejar el resize
     const handleResize = () => {
-      const container = canvasRef.current.parentElement;
-      const containerWidth = container.offsetWidth;
-      const containerHeight = Math.min(600, containerWidth * 0.75);
+      const container = canvasRef.current?.parentElement;
+      if (!container) return;
+      
+      const isDesktop = window.innerWidth >= 768;
+      const containerWidth = isDesktop ? window.innerWidth * 0.95 : container.offsetWidth;
+      const containerHeight = isDesktop ? window.innerHeight * 0.6 : Math.min(600, containerWidth * 0.75);
       
       camera.aspect = containerWidth / containerHeight;
       camera.updateProjectionMatrix();
@@ -231,12 +303,12 @@ const useThreeJS = (canvasRef) => {
     roofMeshRef.current = roofMesh;
     supportGroupRef.current = supportGroup;
 
+    // Render inicial
+    renderer.render(scene, camera);
+
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
       renderer.dispose();
     };
   }, []);
@@ -246,17 +318,15 @@ const useThreeJS = (canvasRef) => {
     renderer: rendererRef.current,
     camera: cameraRef.current,
     roofMesh: roofMeshRef.current,
-    supportGroup: supportGroupRef.current,
-    animationRef
+    supportGroup: supportGroupRef.current
   };
 };
 
 // Componente principal
 const HyperbolicParaboloidViewer = () => {
   const canvasRef = useRef(null);
-  const [autoRotate, setAutoRotate] = useState(true);
-  const [showWireframe, setShowWireframe] = useState(false);
-  const [showSupports, setShowSupports] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const animationRef = useRef(null);
   const [calculations, setCalculations] = useState({
     surfaceArea: 0,
     concreteVolume: 0,
@@ -264,63 +334,110 @@ const HyperbolicParaboloidViewer = () => {
     supportCount: 0
   });
 
-  const { scene, renderer, camera, roofMesh, supportGroup, animationRef } = useThreeJS(canvasRef);
+  const { scene, renderer, camera, roofMesh, supportGroup } = useThreeJS(canvasRef);
 
-  // Controles de mouse
+  // Controles de mouse y touch mejorados
   useEffect(() => {
-    if (!canvasRef.current || !camera) return;
+    if (!canvasRef.current || !camera || !renderer || !scene) return;
 
-    let mouseDown = false;
-    let mouseX = 0;
-    let mouseY = 0;
+    let isInteracting = false;
+    let lastX = 0;
+    let lastY = 0;
 
-    const handleMouseDown = (event) => {
-      mouseDown = true;
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-      setAutoRotate(false);
+    // Función para obtener coordenadas del evento (mouse o touch)
+    const getEventCoordinates = (event) => {
+      if (event.touches && event.touches.length > 0) {
+        return {
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY
+        };
+      }
+      return {
+        x: event.clientX,
+        y: event.clientY
+      };
     };
 
-    const handleMouseUp = () => {
-      mouseDown = false;
+    // Función para renderizar
+    const renderScene = () => {
+      renderer.render(scene, camera);
     };
 
-    const handleMouseMove = (event) => {
-      if (!mouseDown) return;
+    // Handlers para mouse/touch
+    const handleInteractionStart = (event) => {
+      isInteracting = true;
+      const coords = getEventCoordinates(event);
+      lastX = coords.x;
+      lastY = coords.y;
+      setAutoRotate(false); // Pausar rotación automática
+      event.preventDefault();
+    };
+
+    const handleInteractionEnd = () => {
+      isInteracting = false;
+    };
+
+    const handleInteractionMove = (event) => {
+      if (!isInteracting) return;
       
-      const deltaX = event.clientX - mouseX;
-      const deltaY = event.clientY - mouseY;
+      const coords = getEventCoordinates(event);
+      const deltaX = coords.x - lastX;
+      const deltaY = coords.y - lastY;
       
+      // Convertir posición de cámara a coordenadas esféricas
       const spherical = new THREE.Spherical();
       spherical.setFromVector3(camera.position);
+      
+      // Aplicar rotación
       spherical.theta -= deltaX * 0.01;
       spherical.phi += deltaY * 0.01;
+      
+      // Limitar phi para evitar que la cámara se voltee
       spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
       
+      // Actualizar posición de la cámara
       camera.position.setFromSpherical(spherical);
       camera.lookAt(0, 4, 0);
       
-      mouseX = event.clientX;
-      mouseY = event.clientY;
+      // Renderizar inmediatamente
+      renderScene();
+      
+      lastX = coords.x;
+      lastY = coords.y;
+      event.preventDefault();
     };
 
-    canvasRef.current.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('mousemove', handleMouseMove);
+    // Event listeners
+    canvasRef.current.addEventListener('mousedown', handleInteractionStart);
+    canvasRef.current.addEventListener('touchstart', handleInteractionStart, { passive: false });
+    
+    document.addEventListener('mouseup', handleInteractionEnd);
+    document.addEventListener('touchend', handleInteractionEnd);
+    
+    document.addEventListener('mousemove', handleInteractionMove);
+    document.addEventListener('touchmove', handleInteractionMove, { passive: false });
+
+    // Prevenir scroll en canvas
+    const preventScroll = (e) => e.preventDefault();
+    canvasRef.current.addEventListener('touchstart', preventScroll);
+    canvasRef.current.addEventListener('touchmove', preventScroll);
 
     return () => {
       if (canvasRef.current) {
-        canvasRef.current.removeEventListener('mousedown', handleMouseDown);
+        canvasRef.current.removeEventListener('mousedown', handleInteractionStart);
+        canvasRef.current.removeEventListener('touchstart', handleInteractionStart);
+        canvasRef.current.removeEventListener('touchstart', preventScroll);
+        canvasRef.current.removeEventListener('touchmove', preventScroll);
       }
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleInteractionEnd);
+      document.removeEventListener('touchend', handleInteractionEnd);
+      document.removeEventListener('mousemove', handleInteractionMove);
+      document.removeEventListener('touchmove', handleInteractionMove);
     };
-  }, [camera]);
+  }, [camera, renderer, scene]);
 
   // Cálculos
   useEffect(() => {
-    if (!supportGroup) return;
-
     const calculateSurfaceArea = () => {
       let area = 0;
       const dx = 0.5;
@@ -354,10 +471,23 @@ const HyperbolicParaboloidViewer = () => {
       return volume;
     };
 
+    const calculateSupportCount = () => {
+      let count = 0;
+      for (let x = -8; x <= 8; x += 4) {
+        for (let y = -24; y <= 24; y += 4) {
+          const height = Math.max(0, 8 - (x*x/64) - (y*y/625));
+          if (height > 0.5) {
+            count++;
+          }
+        }
+      }
+      return count;
+    };
+
     const surfaceArea = calculateSurfaceArea();
     const airVolume = calculateAirVolume();
     const concreteVolume = surfaceArea * 0.15;
-    const supportCount = supportGroup.children.length;
+    const supportCount = calculateSupportCount();
 
     setCalculations({
       surfaceArea,
@@ -365,26 +495,28 @@ const HyperbolicParaboloidViewer = () => {
       airVolume,
       supportCount
     });
-  }, [supportGroup]);
+  }, []);
 
-  // Animación
+  // Animación de rotación automática
   useEffect(() => {
     if (!scene || !renderer || !camera) return;
 
     const animate = () => {
-      animationRef.current = requestAnimationFrame(animate);
-      
       if (autoRotate) {
         const time = Date.now() * 0.0005;
-        camera.position.x = Math.cos(time) * 40;
-        camera.position.z = Math.sin(time) * 40;
+        const radius = 40;
+        camera.position.x = Math.cos(time) * radius;
+        camera.position.z = Math.sin(time) * radius;
         camera.lookAt(0, 4, 0);
+        
+        renderer.render(scene, camera);
+        animationRef.current = requestAnimationFrame(animate);
       }
-      
-      renderer.render(scene, camera);
     };
 
-    animate();
+    if (autoRotate) {
+      animationRef.current = requestAnimationFrame(animate);
+    }
 
     return () => {
       if (animationRef.current) {
@@ -393,71 +525,56 @@ const HyperbolicParaboloidViewer = () => {
     };
   }, [scene, renderer, camera, autoRotate]);
 
-  // Efectos de los controles
-  useEffect(() => {
-    if (roofMesh) {
-      roofMesh.material.wireframe = showWireframe;
-    }
-  }, [showWireframe, roofMesh]);
-
-  useEffect(() => {
-    if (supportGroup) {
-      supportGroup.visible = showSupports;
-    }
-  }, [showSupports, supportGroup]);
-
   const handleToggleRotate = () => {
     setAutoRotate(!autoRotate);
   };
 
-  const handleToggleWireframe = () => {
-    setShowWireframe(!showWireframe);
-  };
-
-  const handleToggleSupports = () => {
-    setShowSupports(!showSupports);
-  };
-
   const handleReset = () => {
-    if (camera) {
+    if (camera && renderer && scene) {
       camera.position.set(30, 20, 30);
       camera.lookAt(0, 4, 0);
-      setAutoRotate(true);
+      setAutoRotate(false);
+      renderer.render(scene, camera);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-500 to-purple-600 p-2 sm:p-5">
-      <div className="max-w-6xl mx-auto bg-white rounded-lg p-3 sm:p-5 shadow-2xl">
-        <h1 className="text-2xl sm:text-4xl font-bold text-center mb-4 sm:mb-8 text-gray-800 drop-shadow-sm">
-          ⛪ Diseño del Techo de Paraboloide Hiperbólico
-        </h1>
-        
-        <InfoPanel />
-        
-        <Controls 
-          autoRotate={autoRotate}
-          showWireframe={showWireframe}
-          showSupports={showSupports}
-          onToggleRotate={handleToggleRotate}
-          onToggleWireframe={handleToggleWireframe}
-          onToggleSupports={handleToggleSupports}
-          onReset={handleReset}
-        />
-
-        <div className="text-center">
-          <div className="w-full max-w-4xl mx-auto">
-            <canvas 
-              ref={canvasRef} 
-              className="border-2 border-gray-300 rounded-lg shadow-lg w-full h-auto"
+    <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-500 to-purple-600 p-2 md:p-4">
+      <div className="max-w-none md:max-w-7xl mx-auto">
+        <Card className="shadow-2xl overflow-hidden">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 flex items-center justify-center gap-2">
+              <span>⛪</span>
+              Diseño del Techo de Paraboloide Hiperbólico
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 md:space-y-6 p-2 md:p-6">
+            <InfoPanel />
+            
+            <Controls 
+              autoRotate={autoRotate}
+              onToggleRotate={handleToggleRotate}
+              onReset={handleReset}
             />
-          </div>
-          <div className="text-sm text-gray-800 mt-2 font-medium">
-            Use el mouse para rotar la vista. Haga clic en los botones para cambiar la visualización.
-          </div>
-        </div>
 
-        <CalculationsPanel calculations={calculations} />
+            <div className="text-center">
+              <Card className="inline-block border-2 border-gray-300 shadow-lg w-full max-w-none">
+                <CardContent className="p-0">
+                  <canvas 
+                    ref={canvasRef} 
+                    className="rounded-lg w-full h-auto block mx-auto"
+                    style={{ touchAction: 'none', maxWidth: '100%' }}
+                  />
+                </CardContent>
+              </Card>
+              <CardDescription className="mt-4 text-sm text-gray-600 font-medium">
+                Arrastra con el mouse o toca y arrastra para rotar la vista. Los controles funcionan correctamente.
+              </CardDescription>
+            </div>
+
+            <CalculationsPanel calculations={calculations} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
