@@ -151,13 +151,13 @@ const Controls = ({
     >
       {autoRotate ? '⏸️ Pausar' : '▶️ Rotar'}
     </Button>
-    {/* <Button 
+    <Button 
       onClick={onToggleSupports}
       variant={showSupports ? "default" : "outline"}
       className="transform hover:scale-105"
     >
-      {showSupports ? '🏗️ Ocultar Soportes' : '🏗️ Mostrar Soportes'}
-    </Button> */}
+      {showSupports ? '🏗️ Ocultar Polines' : '🏗️ Mostrar Polines'}
+    </Button>
     <Button 
       onClick={onToggleWireframe}
       variant={showWireframe ? "default" : "outline"}
@@ -204,7 +204,7 @@ const CalculationsPanel = ({ calculations }) => (
       </CardContent>
     </Card>
 
-    {/* <Card className="border-2 border-purple-500 bg-purple-50">
+    <Card className="border-2 border-purple-500 bg-purple-50">
       <CardHeader className="pb-3">
         <CardTitle className="text-purple-800 text-lg flex items-center gap-2">
           <span>🏗️</span>
@@ -213,9 +213,9 @@ const CalculationsPanel = ({ calculations }) => (
       </CardHeader>
       <CardContent>
         <p className="text-2xl font-bold text-gray-800">{calculations.supportCount}</p>
-        <CardDescription className="mt-1">Columnas estructurales</CardDescription>
+        <CardDescription className="mt-1">Polines de cimbra (20x30cm)</CardDescription>
       </CardContent>
-    </Card> */}
+    </Card>
   </div>
 );
 
@@ -338,23 +338,27 @@ const useThreeJS = (canvasRef) => {
     roofMesh.castShadow = true;
     scene.add(roofMesh);
 
-    // Crear soportes estructurales
+    // Crear soportes estructurales (polines) según los cálculos
     const supportGroup = new THREE.Group();
     const supportPositions = [];
     
-    // Generar soportes en una cuadrícula
-    for (let x = -6; x <= 6; x += 3) {
-      for (let y = -21; y <= 21; y += 6) {
+    // Generar polines en una cuadrícula de 9x11 (2m x 5m de separación)
+    // Dirección X: -8 a 8, cada 2m (9 polines)
+    // Dirección Y: -25 a 25, cada 5m (11 polines)
+    for (let x = -8; x <= 8; x += 2) {
+      for (let y = -25; y <= 25; y += 5) {
         const height = heightFunction(x, y);
-        if (height > 1.0) { // Solo colocar soportes donde hay altura suficiente
-          const supportGeometry = new THREE.CylinderGeometry(0.25, 0.25, height, 8);
-          const supportMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-          const support = new THREE.Mesh(supportGeometry, supportMaterial);
-          support.position.set(x, height/2, y);
-          support.castShadow = true;
-          supportGroup.add(support);
-          supportPositions.push({x, y, height});
-        }
+        // Crear polín rectangular (20cm x 30cm según cálculos)
+        const supportGeometry = new THREE.BoxGeometry(0.2, height, 0.3);
+        const supportMaterial = new THREE.MeshLambertMaterial({ 
+          color: 0x8B4513, // Color madera
+          transparent: false
+        });
+        const support = new THREE.Mesh(supportGeometry, supportMaterial);
+        support.position.set(x, height/2, y);
+        support.castShadow = true;
+        supportGroup.add(support);
+        supportPositions.push({x, y, height});
       }
     }
     scene.add(supportGroup);
@@ -472,6 +476,8 @@ const HyperbolicParaboloidViewer = () => {
     let isInteracting = false;
     let lastX = 0;
     let lastY = 0;
+    let isPinching = false;
+    let lastPinchDistance = 0;
 
     // Función para obtener coordenadas del evento (mouse o touch)
     const getEventCoordinates = (event) => {
@@ -487,6 +493,18 @@ const HyperbolicParaboloidViewer = () => {
       };
     };
 
+    // Función para calcular distancia entre dos puntos touch
+    const getPinchDistance = (event) => {
+      if (event.touches && event.touches.length >= 2) {
+        const touch1 = event.touches[0];
+        const touch2 = event.touches[1];
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      return 0;
+    };
+
     // Función para renderizar
     const renderScene = () => {
       renderer.render(scene, camera);
@@ -494,51 +512,132 @@ const HyperbolicParaboloidViewer = () => {
 
     // Handlers para mouse/touch
     const handleInteractionStart = (event) => {
-      isInteracting = true;
-      const coords = getEventCoordinates(event);
-      lastX = coords.x;
-      lastY = coords.y;
+      if (event.touches && event.touches.length === 2) {
+        // Comenzar pinch zoom
+        isPinching = true;
+        lastPinchDistance = getPinchDistance(event);
+      } else {
+        // Interacción normal de rotación
+        isInteracting = true;
+        const coords = getEventCoordinates(event);
+        lastX = coords.x;
+        lastY = coords.y;
+      }
       setAutoRotate(false); // Pausar rotación automática
       event.preventDefault();
     };
 
     const handleInteractionEnd = () => {
       isInteracting = false;
+      isPinching = false;
+      lastPinchDistance = 0;
     };
 
     const handleInteractionMove = (event) => {
-      if (!isInteracting) return;
-      
-      const coords = getEventCoordinates(event);
-      const deltaX = coords.x - lastX;
-      const deltaY = coords.y - lastY;
-      
-      // Convertir posición de cámara a coordenadas esféricas
-      const spherical = new THREE.Spherical();
-      spherical.setFromVector3(camera.position);
-      
-      // Aplicar rotación
-      spherical.theta -= deltaX * 0.01;
-      spherical.phi += deltaY * 0.01;
-      
-      // Limitar phi para evitar que la cámara se voltee
-      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
-      
-      // Actualizar posición de la cámara
-      camera.position.setFromSpherical(spherical);
-      camera.lookAt(0, 6, 0);
-      
-      // Renderizar inmediatamente
-      renderScene();
-      
-      lastX = coords.x;
-      lastY = coords.y;
+      if (event.touches && event.touches.length === 2 && isPinching) {
+        // Manejar pinch zoom
+        const currentDistance = getPinchDistance(event);
+        if (lastPinchDistance > 0) {
+          const scale = currentDistance / lastPinchDistance;
+          const zoomFactor = (scale - 1) * 2; // Ajustar sensibilidad
+          
+          const currentCameraDistance = camera.position.distanceTo(new THREE.Vector3(0, 6, 0));
+          
+          // Limitar el zoom
+          const minDistance = 10;
+          const maxDistance = 100;
+          
+          // Calcular nueva posición de cámara
+          const spherical = new THREE.Spherical();
+          spherical.setFromVector3(camera.position.clone().sub(new THREE.Vector3(0, 6, 0)));
+          
+          // Ajustar el radio (distancia) - invertir para que pellizcar hacia adentro acerque
+          spherical.radius *= (1 - zoomFactor);
+          spherical.radius = Math.max(minDistance, Math.min(maxDistance, spherical.radius));
+          
+          // Aplicar nueva posición
+          const newPosition = new THREE.Vector3();
+          newPosition.setFromSpherical(spherical);
+          newPosition.add(new THREE.Vector3(0, 6, 0));
+          
+          camera.position.copy(newPosition);
+          camera.lookAt(0, 6, 0);
+          
+          // Renderizar inmediatamente
+          renderScene();
+        }
+        lastPinchDistance = currentDistance;
+        event.preventDefault();
+      } else if (isInteracting && (!event.touches || event.touches.length === 1)) {
+        // Rotación normal
+        const coords = getEventCoordinates(event);
+        const deltaX = coords.x - lastX;
+        const deltaY = coords.y - lastY;
+        
+        // Convertir posición de cámara a coordenadas esféricas
+        const spherical = new THREE.Spherical();
+        spherical.setFromVector3(camera.position);
+        
+        // Aplicar rotación
+        spherical.theta -= deltaX * 0.01;
+        spherical.phi += deltaY * 0.01;
+        
+        // Limitar phi para evitar que la cámara se voltee
+        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+        
+        // Actualizar posición de la cámara
+        camera.position.setFromSpherical(spherical);
+        camera.lookAt(0, 6, 0);
+        
+        // Renderizar inmediatamente
+        renderScene();
+        
+        lastX = coords.x;
+        lastY = coords.y;
+        event.preventDefault();
+      }
+    };
+
+    // Handler para zoom con rueda del ratón
+    const handleWheel = (event) => {
       event.preventDefault();
+      
+      const zoomFactor = 0.1;
+      const direction = event.deltaY > 0 ? 1 : -1;
+      const currentDistance = camera.position.distanceTo(new THREE.Vector3(0, 6, 0));
+      
+      // Limitar el zoom para evitar estar muy cerca o muy lejos
+      const minDistance = 10;
+      const maxDistance = 100;
+      
+      if ((direction > 0 && currentDistance < maxDistance) || 
+          (direction < 0 && currentDistance > minDistance)) {
+        
+        // Calcular nueva posición de cámara
+        const spherical = new THREE.Spherical();
+        spherical.setFromVector3(camera.position.clone().sub(new THREE.Vector3(0, 6, 0)));
+        
+        // Ajustar el radio (distancia)
+        spherical.radius += direction * spherical.radius * zoomFactor;
+        spherical.radius = Math.max(minDistance, Math.min(maxDistance, spherical.radius));
+        
+        // Aplicar nueva posición
+        const newPosition = new THREE.Vector3();
+        newPosition.setFromSpherical(spherical);
+        newPosition.add(new THREE.Vector3(0, 6, 0));
+        
+        camera.position.copy(newPosition);
+        camera.lookAt(0, 6, 0);
+        
+        // Renderizar inmediatamente
+        renderScene();
+      }
     };
 
     // Event listeners
     canvasRef.current.addEventListener('mousedown', handleInteractionStart);
     canvasRef.current.addEventListener('touchstart', handleInteractionStart, { passive: false });
+    canvasRef.current.addEventListener('wheel', handleWheel, { passive: false });
     
     document.addEventListener('mouseup', handleInteractionEnd);
     document.addEventListener('touchend', handleInteractionEnd);
@@ -555,6 +654,7 @@ const HyperbolicParaboloidViewer = () => {
       if (canvasRef.current) {
         canvasRef.current.removeEventListener('mousedown', handleInteractionStart);
         canvasRef.current.removeEventListener('touchstart', handleInteractionStart);
+        canvasRef.current.removeEventListener('wheel', handleWheel);
         canvasRef.current.removeEventListener('touchstart', preventScroll);
         canvasRef.current.removeEventListener('touchmove', preventScroll);
       }
@@ -593,16 +693,10 @@ const HyperbolicParaboloidViewer = () => {
     };
 
     const calculateSupportCount = () => {
-      let count = 0;
-      for (let x = -6; x <= 6; x += 3) {
-        for (let y = -21; y <= 21; y += 6) {
-          const height = heightFunction(x, y);
-          if (height > 1.0) {
-            count++;
-          }
-        }
-      }
-      return count;
+      // Cálculo según la distribución real de polines (9x11)
+      // Dirección X: -8 a 8, cada 2m (9 polines)
+      // Dirección Y: -25 a 25, cada 5m (11 polines)
+      return 9 * 11; // = 99 polines
     };
 
     const surfaceArea = calculateSurfaceArea();
@@ -721,9 +815,14 @@ const HyperbolicParaboloidViewer = () => {
                   />
                 </CardContent>
               </Card>
-              <CardDescription className="mt-4 text-sm text-gray-600 font-medium">
-                Arrastra para rotar la vista. Los puntos de colores muestran las alturas de verificación del documento.
-              </CardDescription>
+              <div className="mt-4 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                <CardDescription className="text-sm text-blue-800 font-semibold text-center">
+                  🖱️ Arrastra para rotar • 🔍 Rueda del ratón para zoom • 👆 Pellizca con dos dedos para zoom (móvil)
+                </CardDescription>
+                <CardDescription className="text-xs text-blue-600 text-center mt-1">
+                  Los puntos de colores muestran las alturas de verificación del documento
+                </CardDescription>
+              </div>
             </div>
 
             <CalculationsPanel calculations={calculations} />
