@@ -141,7 +141,9 @@ const Controls = ({
   showSupports,
   onToggleSupports,
   showWireframe,
-  onToggleWireframe
+  onToggleWireframe,
+  showChurch,
+  onToggleChurch
 }) => (
   <div className="flex justify-center gap-3 mb-6 flex-wrap">
     <Button 
@@ -164,6 +166,13 @@ const Controls = ({
       className="transform hover:scale-105"
     >
       {showWireframe ? '🎨 Sólido' : '📐 Wireframe'}
+    </Button>
+    <Button 
+      onClick={onToggleChurch}
+      variant={showChurch ? "default" : "outline"}
+      className="transform hover:scale-105"
+    >
+      {showChurch ? '⛪ Ocultar Iglesia' : '⛪ Mostrar Iglesia'}
     </Button>
     <Button 
       onClick={onReset}
@@ -226,6 +235,7 @@ const useThreeJS = (canvasRef) => {
   const cameraRef = useRef(null);
   const roofMeshRef = useRef(null);
   const supportGroupRef = useRef(null);
+  const churchGroupRef = useRef(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -364,6 +374,158 @@ const useThreeJS = (canvasRef) => {
     scene.add(supportGroup);
     supportGroup.visible = false;
 
+    // Crear elementos de la iglesia construida
+    const churchGroup = new THREE.Group();
+    
+    // Crear muros laterales de la iglesia
+    const createWalls = () => {
+      const wallMaterial = new THREE.MeshLambertMaterial({ color: 0xDEB887 }); // Beige claro
+      
+      // Muro lateral izquierdo
+      const leftWallGeometry = new THREE.BoxGeometry(0.3, 4, 50);
+      const leftWall = new THREE.Mesh(leftWallGeometry, wallMaterial);
+      leftWall.position.set(-8.5, 2, 0);
+      leftWall.castShadow = true;
+      churchGroup.add(leftWall);
+      
+      // Muro lateral derecho
+      const rightWallGeometry = new THREE.BoxGeometry(0.3, 4, 50);
+      const rightWall = new THREE.Mesh(rightWallGeometry, wallMaterial);
+      rightWall.position.set(8.5, 2, 0);
+      rightWall.castShadow = true;
+      churchGroup.add(rightWall);
+      
+      // Muro frontal (entrada)
+      const frontWallGeometry = new THREE.BoxGeometry(17, 4, 0.3);
+      const frontWall = new THREE.Mesh(frontWallGeometry, wallMaterial);
+      frontWall.position.set(0, 2, -25.5);
+      frontWall.castShadow = true;
+      churchGroup.add(frontWall);
+      
+      // Arco de entrada
+      const archGeometry = new THREE.BoxGeometry(3, 5, 0.5);
+      const archMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      const arch = new THREE.Mesh(archGeometry, archMaterial);
+      arch.position.set(0, 2.5, -25.2);
+      churchGroup.add(arch);
+    };
+    
+    // Crear altar y cruz
+    const createAltar = () => {
+      // Base del altar
+      const altarGeometry = new THREE.BoxGeometry(6, 1, 3);
+      const altarMaterial = new THREE.MeshLambertMaterial({ color: 0xF5DEB3 });
+      const altar = new THREE.Mesh(altarGeometry, altarMaterial);
+      altar.position.set(0, 0.5, 22);
+      altar.castShadow = true;
+      churchGroup.add(altar);
+      
+      // Mesa del altar
+      const tableGeometry = new THREE.BoxGeometry(4, 0.2, 2);
+      const tableMaterial = new THREE.MeshLambertMaterial({ color: 0xD2691E });
+      const table = new THREE.Mesh(tableGeometry, tableMaterial);
+      table.position.set(0, 1.1, 22);
+      table.castShadow = true;
+      churchGroup.add(table);
+      
+      // Cruz vertical
+      const crossVerticalGeometry = new THREE.BoxGeometry(0.3, 4, 0.3);
+      const crossMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      const crossVertical = new THREE.Mesh(crossVerticalGeometry, crossMaterial);
+      crossVertical.position.set(0, 3, 24);
+      crossVertical.castShadow = true;
+      churchGroup.add(crossVertical);
+      
+      // Cruz horizontal
+      const crossHorizontalGeometry = new THREE.BoxGeometry(2, 0.3, 0.3);
+      const crossHorizontal = new THREE.Mesh(crossHorizontalGeometry, crossMaterial);
+      crossHorizontal.position.set(0, 3.5, 24);
+      crossHorizontal.castShadow = true;
+      churchGroup.add(crossHorizontal);
+    };
+    
+    // Crear bancas
+    const createBenches = () => {
+      const benchMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      
+      for (let row = 0; row < 8; row++) {
+        for (let side = -1; side <= 1; side += 2) {
+          // Asiento de la banca
+          const seatGeometry = new THREE.BoxGeometry(1.5, 0.1, 6);
+          const seat = new THREE.Mesh(seatGeometry, benchMaterial);
+          seat.position.set(side * 3, 0.45, -18 + row * 4);
+          seat.castShadow = true;
+          churchGroup.add(seat);
+          
+          // Respaldo de la banca
+          const backGeometry = new THREE.BoxGeometry(1.5, 1, 0.1);
+          const back = new THREE.Mesh(backGeometry, benchMaterial);
+          back.position.set(side * 3, 0.95, -18 + row * 4 + 2.95);
+          back.castShadow = true;
+          churchGroup.add(back);
+          
+          // Patas de la banca
+          for (let i = 0; i < 4; i++) {
+            const legGeometry = new THREE.BoxGeometry(0.1, 0.4, 0.1);
+            const leg = new THREE.Mesh(legGeometry, benchMaterial);
+            const xOffset = i < 2 ? -0.7 : 0.7;
+            const zOffset = i % 2 === 0 ? -2.9 : 2.9;
+            leg.position.set(side * 3 + xOffset, 0.2, -18 + row * 4 + zOffset);
+            leg.castShadow = true;
+            churchGroup.add(leg);
+          }
+        }
+      }
+    };
+    
+    // Crear figura del sacerdote
+    const createPriest = () => {
+      const priestGroup = new THREE.Group();
+      
+      // Cuerpo
+      const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.5, 1.5, 8);
+      const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 }); // Negro
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.set(0, 0.75, 20);
+      body.castShadow = true;
+      priestGroup.add(body);
+      
+      // Cabeza
+      const headGeometry = new THREE.SphereGeometry(0.25, 8, 8);
+      const headMaterial = new THREE.MeshLambertMaterial({ color: 0xFFDBCA }); // Piel
+      const head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.set(0, 1.75, 20);
+      head.castShadow = true;
+      priestGroup.add(head);
+      
+      // Brazos
+      const armGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1, 6);
+      const armMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+      
+      const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+      leftArm.position.set(-0.6, 1.2, 20);
+      leftArm.rotation.z = Math.PI / 6;
+      leftArm.castShadow = true;
+      priestGroup.add(leftArm);
+      
+      const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+      rightArm.position.set(0.6, 1.2, 20);
+      rightArm.rotation.z = -Math.PI / 6;
+      rightArm.castShadow = true;
+      priestGroup.add(rightArm);
+      
+      churchGroup.add(priestGroup);
+    };
+    
+    // Crear todos los elementos de la iglesia
+    createWalls();
+    createAltar();
+    createBenches();
+    createPriest();
+    
+    scene.add(churchGroup);
+    churchGroup.visible = false;
+
     // Crear marcadores para puntos de verificación
     const createMarker = (x, y, z, color, label) => {
       const markerGeometry = new THREE.SphereGeometry(0.3, 8, 8);
@@ -434,6 +596,7 @@ const useThreeJS = (canvasRef) => {
     cameraRef.current = camera;
     roofMeshRef.current = roofMesh;
     supportGroupRef.current = supportGroup;
+    churchGroupRef.current = churchGroup;
 
     // Render inicial
     renderer.render(scene, camera);
@@ -450,7 +613,8 @@ const useThreeJS = (canvasRef) => {
     renderer: rendererRef.current,
     camera: cameraRef.current,
     roofMesh: roofMeshRef.current,
-    supportGroup: supportGroupRef.current
+    supportGroup: supportGroupRef.current,
+    churchGroup: churchGroupRef.current
   };
 };
 
@@ -460,6 +624,7 @@ const HyperbolicParaboloidViewer = () => {
   const [autoRotate, setAutoRotate] = useState(false);
   const [showSupports, setShowSupports] = useState(false);
   const [showWireframe, setShowWireframe] = useState(false);
+  const [showChurch, setShowChurch] = useState(false);
   const animationRef = useRef(null);
   const [calculations, setCalculations] = useState({
     surfaceArea: 0,
@@ -467,7 +632,7 @@ const HyperbolicParaboloidViewer = () => {
     supportCount: 0
   });
 
-  const { scene, renderer, camera, roofMesh, supportGroup } = useThreeJS(canvasRef);
+  const { scene, renderer, camera, roofMesh, supportGroup, churchGroup } = useThreeJS(canvasRef);
 
   // Controles de mouse y touch mejorados
   useEffect(() => {
@@ -757,6 +922,15 @@ const HyperbolicParaboloidViewer = () => {
     }
   }, [showWireframe, roofMesh, renderer, scene, camera]);
 
+  useEffect(() => {
+    if (churchGroup) {
+      churchGroup.visible = showChurch;
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+  }, [showChurch, churchGroup, renderer, scene, camera]);
+
   const handleToggleRotate = () => {
     setAutoRotate(!autoRotate);
   };
@@ -767,6 +941,10 @@ const HyperbolicParaboloidViewer = () => {
 
   const handleToggleWireframe = () => {
     setShowWireframe(!showWireframe);
+  };
+
+  const handleToggleChurch = () => {
+    setShowChurch(!showChurch);
   };
 
   const handleReset = () => {
@@ -803,6 +981,8 @@ const HyperbolicParaboloidViewer = () => {
               onToggleSupports={handleToggleSupports}
               showWireframe={showWireframe}
               onToggleWireframe={handleToggleWireframe}
+              showChurch={showChurch}
+              onToggleChurch={handleToggleChurch}
             />
 
             <div className="text-center">
